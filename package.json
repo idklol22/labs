@@ -1,0 +1,12 @@
+{
+  "name": "research-lab",
+  "version": "1.0.0",
+  "description": "Mechanistic Interpretability Research Lab",
+  "scripts": {
+    "dev": "npx serve . -p 3000 -s",
+    "start": "npx serve . -p 3000 -s"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  }
+}

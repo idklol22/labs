@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eigenlayer Research — Mechanistic Interpretability Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset & Base ─────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:         #1a1a1a;
+      --bg-grid:    #222222;
+      --bg-card:    #f5f5f0;
+      --bg-card-hover: #ffffff;
+      --border:     #333333;
+      --border-light: #e0e0d8;
+      --text:       #cccccc;
+      --text-dim:   #888888;
+      --text-dark:  #1a1a1a;
+      --text-dark-dim: #666666;
+      --white:      #f0f0ec;
+      --accent:     #4a9eff;
+      --accent2:    #22c55e;
+      --accent3:    #f59e0b;
+      --serif:      'DM Serif Display', Georgia, 'Times New Roman', serif;
+      --sans:       'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --mono:       'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Subtle grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--bg-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body > * { position: relative; z-index: 1; }
+
+    a { color: var(--accent); text-decoration: none; transition: color 0.2s; }
+    a:hover { color: var(--white); }
+
+    /* ── Typography ───────────────────────────────────── */
+    h1, h2 { font-family: var(--serif); font-weight: 400; color: var(--white); line-height: 1.15; }
+    h1 { font-size: clamp(3rem, 7vw, 5.5rem); }
+    h2 { font-size: clamp(2rem, 4.5vw, 3.5rem); }
+    h3 { font-family: var(--sans); font-weight: 600; font-size: 1.15rem; line-height: 1.3; }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--text-dim);
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Layout ───────────────────────────────────────── */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 3rem;
+    }
+
+    section {
+      padding: 7rem 0;
+    }
+
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Nav ──────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 1.25rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(26, 26, 26, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: var(--serif);
+      font-size: 1.2rem;
+      color: var(--white);
+      font-style: italic;
+    }
+
+    .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+
+    .nav-links a {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--white); }
+
+    /* ── Hero ─────────────────────────────────────────── */
+    #hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Scrolling text background */
+    .hero-bg-text {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .hero-bg-text-inner {
+      position: absolute;
+      left: -10%;
+      right: -10%;
+      top: -50%;
+      bottom: -50%;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      animation: hero-scroll 60s linear infinite;
+    }
+
+    .hero-bg-text-inner .text-line {
+      font-family: var(--mono);
+      font-size: clamp(0.7rem, 1.1vw, 0.9rem);
+      line-height: 2.2;
+      color: rgba(255, 255, 255, 0.06);
+      white-space: nowrap;
+      letter-spacing: 0.04em;
+      user-select: none;
+    }
+
+    .hero-bg-text-inner .text-line:nth-child(even) {
+      color: rgba(74, 158, 255, 0.06);
+    }
+
+    @keyframes hero-scroll {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-50%); }
+    }
+
+    /* Vignette overlay */
+    .hero-vignette {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(ellipse 70% 60% at 50% 50%, transparent 0%, rgba(26,26,26,0.4) 40%, rgba(26,26,26,0.85) 65%, var(--bg) 85%);
+    }
+
+    /* Top / bottom edge fade */
+    .hero-vignette::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, var(--bg) 0%, transparent 12%, transparent 85%, var(--bg) 100%);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 3rem;
+      width: 100%;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      color: var(--accent);
+      margin-bottom: 2.5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .hero-eyebrow::before,
+    .hero-eyebrow::after {
+      content: '';
+      width: 2rem;
+      height: 1px;
+      background: var(--accent);
+      opacity: 0.4;
+    }
+
+    .hero-content h1 {
+      margin-bottom: 2rem;
+      font-style: italic;
+      max-width: 800px;
+    }
+
+    .hero-tagline {
+      font-size: clamp(1rem, 1.5vw, 1.15rem);
+      color: var(--text-dim);
+      max-width: 560px;
+      margin-bottom: 3rem;
+      line-height: 1.8;
+      font-weight: 300;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.9rem 2rem;
+      background: var(--bg-card);
+      color: var(--text-dark);
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      border-radius: 0;
+      transition: all 0.25s;
+    }
+
+    .btn-primary:hover {
+      background: var(--white);
+      color: var(--text-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary .arrow { transition: transform 0.25s; }
+    .btn-primary:hover .arrow { transform: translateX(4px); }
+
+    .btn-ghost {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.25rem;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .btn-ghost:hover { color: var(--white); border-color: var(--white); }
+
+
+    /* ── Stats Bar ────────────────────────────────────── */
+    .stats-bar {
+      padding: 3rem 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2rem;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-family: var(--serif);
+      font-size: 2.5rem;
+      color: var(--white);
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text-dim);
+    }
+
+    /* ── Research Focus ───────────────────────────────── */
+    .focus-intro {
+      max-width: 650px;
+      margin-bottom: 4rem;
+    }
+
+    .focus-intro h2 {
+      margin-bottom: 1.5rem;
+      font-style: italic;
+    }
+
+    .focus-intro p {
+      color: var(--text-dim);
+      font-size: 1rem;
+      line-height: 1.8;
+      font-weight: 300;
+    }
+
+    .focus-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .focus-card {
+      background: var(--bg-card);
+      padding: 2.5rem 2rem;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .focus-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .focus-number {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-dark-dim);
+      letter-spacing: 0.1em;
+      margin-bottom: 1.5rem;
+      display: block;
+    }
+
+    .focus-card h3 {
+      color: var(--text-dark);
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+    }
+
+    .focus-card p {
+      color: var(--text-dark-dim);
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+
+    .focus-card .focus-tag {
+      display: inline-block;
+      margin-top: 1.5rem;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.3rem 0.7rem;
+      border: 1px solid var(--border-light);
+      color: var(--text-dark-dim);
+    }
+
+    /* ── Current Work ─────────────────────────────────── */
+    .work-intro {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      margin-bottom: 4rem;
+      align-items: end;
+    }
+
+    .work-intro h2 { font-style: italic; }
+
+    .work-intro p {
+      color: var(--text-dim);
+      font-size: 0.95rem;
+      line-height: 1.8;
+      font-weight: 300;
+    }
+
+    .work-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .work-item {
+      display: grid;
+      grid-template-columns: 60px 1fr auto;
+      gap: 2.5rem;
+      align-items: start;
+      padding: 2.5rem 0;
+      border-top: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+
+    .work-item:last-child { border-bottom: 1px solid var(--border); }
+
+    .work-number {
+      font-family: var(--serif);
+      font-size: 1.8rem;
+      color: var(--text-dim);
+      font-style: italic;
+      line-height: 1;
+    }
+
+    .work-body h3 {
+      color: var(--white);
+      margin-bottom: 0.75rem;
+      font-size: 1.2rem;
+    }
+
+    .work-body p {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      line-height: 1.7;
+      max-width: 500px;
+    }
+
+    .work-tag-pill {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.35rem 0.8rem;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      white-space: nowrap;
+      margin-top: 0.25rem;
+    }
+
+    /* ── Publications ─────────────────────────────────── */
+    .pub-intro {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      margin-bottom: 3rem;
+    }
+
+    .pub-intro h2 { font-style: italic; }
+
+    .pub-view-all {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.25rem;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .pub-view-all:hover { color: var(--white); border-color: var(--white); }
+
+    .pub-list { display: flex; flex-direction: column; }
+
+    .pub-item {
+      display: grid;
+      grid-template-columns: 80px 1fr auto;
+      gap: 2rem;
+      align-items: baseline;
+      padding: 1.75rem 0;
+      border-top: 1px solid var(--border);
+      transition: padding-left 0.3s;
+    }
+
+    .pub-item:last-child { border-bottom: 1px solid var(--border); }
+
+    .pub-item:hover { padding-left: 0.5rem; }
+
+    .pub-year {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .pub-title {
+      font-family: var(--sans);
+      font-weight: 500;
+      color: var(--white);
+      margin-bottom: 0.3rem;
+      font-size: 1rem;
+    }
+
+    .pub-authors {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      font-weight: 300;
+    }
+
+    .pub-venue {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    /* ── Team ─────────────────────────────────────────── */
+    .team-intro {
+      max-width: 600px;
+      margin-bottom: 4rem;
+    }
+
+    .team-intro h2 {
+      font-style: italic;
+      margin-bottom: 1rem;
+    }
+
+    .team-intro p {
+      color: var(--text-dim);
+      font-weight: 300;
+      line-height: 1.8;
+    }
+
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .team-card {
+      background: var(--bg-card);
+      padding: 2.5rem 2rem;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .team-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    }
+
+    .team-avatar {
+      width: 56px;
+      height: 56px;
+      background: var(--text-dark);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.5rem;
+      color: var(--bg-card);
+      margin-bottom: 1.5rem;
+    }
+
+    .team-name {
+      font-weight: 600;
+      color: var(--text-dark);
+      margin-bottom: 0.25rem;
+      font-size: 1rem;
+    }
+
+    .team-role {
+      font-size: 0.85rem;
+      color: var(--text-dark-dim);
+      margin-bottom: 0.75rem;
+    }
+
+    .team-focus {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dark-dim);
+    }
+
+    /* ── Join / Contact ───────────────────────────────── */
+    #contact { padding-bottom: 5rem; }
+
+    .contact-inner {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 6rem;
+      margin-top: 3rem;
+    }
+
+    .contact-text h2 {
+      font-style: italic;
+      margin-bottom: 1.5rem;
+    }
+
+    .contact-text p {
+      color: var(--text-dim);
+      font-size: 1rem;
+      margin-bottom: 2.5rem;
+      line-height: 1.8;
+      font-weight: 300;
+    }
+
+    .contact-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.9rem 2rem;
+      background: var(--bg-card);
+      color: var(--text-dark);
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      transition: all 0.25s;
+    }
+
+    .contact-cta:hover {
+      background: var(--white);
+      color: var(--text-dark);
+      transform: translateY(-1px);
+    }
+
+    .contact-links-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .contact-link-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.25rem 0;
+      border-top: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      transition: color 0.2s, padding-left 0.3s;
+    }
+
+    .contact-link-item:last-child { border-bottom: 1px solid var(--border); }
+    .contact-link-item:hover { color: var(--white); padding-left: 0.5rem; }
+
+    .contact-link-icon {
+      font-size: 0.9rem;
+      width: 18px;
+      text-align: center;
+      color: var(--accent);
+    }
+
+    /* ── Footer ───────────────────────────────────────── */
+    footer {
+      padding: 3rem 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-left {
+      font-family: var(--serif);
+      font-style: italic;
+      color: var(--text-dim);
+      font-size: 0.95rem;
+    }
+
+    .footer-right {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* ── Scroll Reveal ────────────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* stagger children */
+    .stagger > .reveal:nth-child(2) { transition-delay: 0.1s; }
+    .stagger > .reveal:nth-child(3) { transition-delay: 0.2s; }
+    .stagger > .reveal:nth-child(4) { transition-delay: 0.3s; }
+    .stagger > .reveal:nth-child(5) { transition-delay: 0.35s; }
+    .stagger > .reveal:nth-child(6) { transition-delay: 0.4s; }
+
+    /* ── Responsive ───────────────────────────────────── */
+    @media (max-width: 900px) {
+      .container { padding: 0 1.5rem; }
+      nav { padding: 1rem 1.5rem; }
+      .hero-content { padding: 0 1.5rem; }
+      section { padding: 5rem 0; }
+      .nav-links { display: none; }
+      .focus-grid { grid-template-columns: 1fr; }
+      .team-card { width: calc(50% - 0.75rem); }
+      .team-card.expanded { width: 100%; }
+      .team-detail-content { grid-template-columns: 1fr; }
+      .work-intro { grid-template-columns: 1fr; gap: 1.5rem; }
+      .work-item { grid-template-columns: 40px 1fr; }
+      .work-tag-pill { display: none; }
+      .pub-item { grid-template-columns: 1fr; gap: 0.5rem; }
+      .pub-venue { justify-self: start; }
+      .contact-inner { grid-template-columns: 1fr; gap: 3rem; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 2rem; }
+    }
+
+    @media (max-width: 600px) {
+      .team-card { width: 100%; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .footer-inner { flex-direction: column; gap: 1rem; text-align: center; }
+      .hero-actions { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Navigation ──────────────────────────────────── -->
+  <nav>
+    <div class="nav-logo">Eigenlayer</div>
+    <ul class="nav-links">
+      <li><a href="#research">Research</a></li>
+      <li><a href="#work">Work</a></li>
+      <li><a href="#publications">Papers</a></li>
+      <li><a href="#team">Team</a></li>
+      <li><a href="#contact">Join Us</a></li>
+    </ul>
+  </nav>
+
+  <!-- ── Hero ────────────────────────────────────────── -->
+  <section id="hero">
+    <div class="hero-bg-text" aria-hidden="true">
+      <div class="hero-bg-text-inner" id="hero-scroll-text"></div>
+    </div>
+    <div class="hero-vignette"></div>
+    <div class="hero-content">
+      <p class="hero-eyebrow">Mechanistic Interpretability Lab</p>
+      <h1>Reverse-engineering<br>the geometry of<br>neural computation</h1>
+      <p class="hero-tagline">
+        We study the internal mechanisms of large language models &mdash; mapping circuits, features, and representations to build a rigorous science of deep learning.
+      </p>
+      <div class="hero-actions">
+        <a href="#research" class="btn-primary">Explore our research <span class="arrow">&rarr;</span></a>
+        <a href="#publications" class="btn-ghost">Read our papers</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Stats Bar ───────────────────────────────────── -->
+  <div class="stats-bar">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat reveal">
+          <div class="stat-number">12</div>
+          <div class="stat-label">Researchers</div>
+        </div>
+        <div class="stat reveal">
+          <div class="stat-number">28</div>
+          <div class="stat-label">Publications</div>
+        </div>
+        <div class="stat reveal">
+          <div class="stat-number">4</div>
+          <div class="stat-label">Active Projects</div>
+        </div>
+        <div class="stat reveal">
+          <div class="stat-number">10M+</div>
+          <div class="stat-label">Features Mapped</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Research Focus ──────────────────────────────── -->
+  <section id="research">
+    <div class="container">
+      <p class="section-label reveal">01 &mdash; Research Focus</p>
+      <div class="focus-intro reveal">
+        <h2>Understanding neural networks from the inside out</h2>
+        <p>We develop methods to decompose, analyze, and understand the computational mechanisms learned by deep neural networks.</p>
+      </div>
+      <div class="focus-grid stagger">
+        <div class="focus-card reveal">
+          <span class="focus-number">01</span>
+          <h3>Circuit Discovery</h3>
+          <p>Identifying and analyzing computational subgraphs within transformer models that implement specific algorithmic behaviors, from induction heads to indirect object identification.</p>
+          <span class="focus-tag">Neural Pathways</span>
+        </div>
+        <div class="focus-card reveal">
+          <span class="focus-number">02</span>
+          <h3>Feature Geometry</h3>
+          <p>Mapping the structure of learned representations in activation space. We study superposition, polysemanticity, and the geometric organization of features across layers.</p>
+          <span class="focus-tag">Representations</span>
+        </div>
+        <div class="focus-card reveal">
+          <span class="focus-number">03</span>
+          <h3>Scalable Interpretability</h3>
+          <p>Developing automated tools and methods &mdash; sparse autoencoders, activation patching, causal tracing &mdash; that scale interpretability to frontier models.</p>
+          <span class="focus-tag">Tooling</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Current Work ────────────────────────────────── -->
+  <section id="work">
+    <div class="container">
+      <p class="section-label reveal">02 &mdash; Current Work</p>
+      <div class="work-intro reveal">
+        <h2>Active research directions</h2>
+        <p>Our current projects span circuit-level analysis, dictionary learning at scale, automated interpretability pipelines, and the mathematical foundations of representation.</p>
+      </div>
+      <div class="work-list">
+        <div class="work-item reveal">
+          <span class="work-number">01</span>
+          <div class="work-body">
+            <h3>Attention Head Taxonomy</h3>
+            <p>A comprehensive classification of attention head types in GPT-scale models, identifying 14 distinct functional categories across 96 layers.</p>
+          </div>
+          <span class="work-tag-pill">Circuits</span>
+        </div>
+        <div class="work-item reveal">
+          <span class="work-number">02</span>
+          <div class="work-body">
+            <h3>Sparse Autoencoder Scaling</h3>
+            <p>Training dictionary learning models with 10M+ features on frontier LLMs to decompose residual stream activations into interpretable components.</p>
+          </div>
+          <span class="work-tag-pill">Features</span>
+        </div>
+        <div class="work-item reveal">
+          <span class="work-number">03</span>
+          <div class="work-body">
+            <h3>Automated Circuit Finding</h3>
+            <p>Graph-based algorithms for automatically discovering minimal circuits responsible for specific model behaviors, with formal completeness guarantees.</p>
+          </div>
+          <span class="work-tag-pill">Tools</span>
+        </div>
+        <div class="work-item reveal">
+          <span class="work-number">04</span>
+          <div class="work-body">
+            <h3>Superposition &amp; Capacity</h3>
+            <p>Mathematical frameworks for understanding how models represent more features than dimensions, and the phase transitions governing feature storage.</p>
+          </div>
+          <span class="work-tag-pill">Theory</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Publications ────────────────────────────────── -->
+  <section id="publications">
+    <div class="container">
+      <p class="section-label reveal">03 &mdash; Publications</p>
+      <div class="pub-intro reveal">
+        <h2>Selected papers</h2>
+        <a href="#" class="pub-view-all">View all &rarr;</a>
+      </div>
+      <div class="pub-list">
+        <div class="pub-item reveal">
+          <span class="pub-year">2025</span>
+          <div>
+            <div class="pub-title">Scaling Sparse Autoencoders to 100B-Parameter Language Models</div>
+            <div class="pub-authors">A. Chen, M. Nakamura, S. Patel, R. Kim</div>
+          </div>
+          <span class="pub-venue">ICML 2025</span>
+        </div>
+        <div class="pub-item reveal">
+          <span class="pub-year">2025</span>
+          <div>
+            <div class="pub-title">Complete Circuit Discovery via Differentiable Masking</div>
+            <div class="pub-authors">R. Kim, L. Weber, A. Chen</div>
+          </div>
+          <span class="pub-venue">ICLR 2025</span>
+        </div>
+        <div class="pub-item reveal">
+          <span class="pub-year">2024</span>
+          <div>
+            <div class="pub-title">The Geometry of Polysemantic Neurons in Transformer MLPs</div>
+            <div class="pub-authors">M. Nakamura, E. Okafor, S. Patel</div>
+          </div>
+          <span class="pub-venue">NeurIPS 2024</span>
+        </div>
+        <div class="pub-item reveal">
+          <span class="pub-year">2024</span>
+          <div>
+            <div class="pub-title">Attention Head Functional Taxonomy: A Large-Scale Empirical Study</div>
+            <div class="pub-authors">S. Patel, A. Chen, L. Weber, R. Kim</div>
+          </div>
+          <span class="pub-venue">ICML 2024</span>
+        </div>
+        <div class="pub-item reveal">
+          <span class="pub-year">2024</span>
+          <div>
+            <div class="pub-title">Phase Transitions in Feature Superposition</div>
+            <div class="pub-authors">L. Weber, M. Nakamura</div>
+          </div>
+          <span class="pub-venue">TMLR</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Team ────────────────────────────────────────── -->
+  <section id="team">
+    <div class="container">
+      <p class="section-label reveal">04 &mdash; Team</p>
+      <div class="team-intro reveal">
+        <h2>The people behind the research</h2>
+        <p>A small, focused group of researchers and engineers working at the intersection of machine learning, neuroscience, and mathematics.</p>
+      </div>
+      <div class="team-grid stagger">
+        <div class="team-card reveal">
+          <div class="team-avatar">A</div>
+          <div class="team-name">Dr. Arjun Chen</div>
+          <div class="team-role">Principal Investigator</div>
+          <div class="team-focus">Circuit discovery, SAE training</div>
+        </div>
+        <div class="team-card reveal">
+          <div class="team-avatar">M</div>
+          <div class="team-name">Dr. Maya Nakamura</div>
+          <div class="team-role">Senior Researcher</div>
+          <div class="team-focus">Feature geometry, superposition</div>
+        </div>
+        <div class="team-card reveal">
+          <div class="team-avatar">S</div>
+          <div class="team-name">Sanjay Patel</div>
+          <div class="team-role">Research Scientist</div>
+          <div class="team-focus">Attention mechanisms, tooling</div>
+        </div>
+        <div class="team-card reveal">
+          <div class="team-avatar">R</div>
+          <div class="team-name">Rachel Kim</div>
+          <div class="team-role">Research Scientist</div>
+          <div class="team-focus">Automated circuit finding</div>
+        </div>
+        <div class="team-card reveal">
+          <div class="team-avatar">L</div>
+          <div class="team-name">Lukas Weber</div>
+          <div class="team-role">Research Scientist</div>
+          <div class="team-focus">Theoretical foundations</div>
+        </div>
+        <div class="team-card reveal">
+          <div class="team-avatar">E</div>
+          <div class="team-name">Emeka Okafor</div>
+          <div class="team-role">Research Engineer</div>
+          <div class="team-focus">Infrastructure, scaling</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Contact ─────────────────────────────────────── -->
+  <section id="contact">
+    <div class="container">
+      <p class="section-label reveal">05 &mdash; Join Us</p>
+      <div class="contact-inner reveal">
+        <div class="contact-text">
+          <h2>Help build the science of neural network internals</h2>
+          <p>
+            We're looking for researchers and engineers passionate about understanding how neural networks work. If you have experience in mechanistic interpretability, representation learning, or systems engineering for ML research, we'd love to hear from you.
+          </p>
+          <a href="mailto:careers@eigenlayer-research.org" class="contact-cta">View open positions <span>&rarr;</span></a>
+        </div>
+        <div class="contact-links-list">
+          <a href="#" class="contact-link-item">
+            <span class="contact-link-icon">&loz;</span>
+            <span>GitHub &mdash; eigenlayer-research</span>
+          </a>
+          <a href="#" class="contact-link-item">
+            <span class="contact-link-icon">&loz;</span>
+            <span>Twitter / X &mdash; @eigenlayer_lab</span>
+          </a>
+          <a href="#" class="contact-link-item">
+            <span class="contact-link-icon">&loz;</span>
+            <span>Blog &mdash; research.eigenlayer.org</span>
+          </a>
+          <a href="mailto:hello@eigenlayer-research.org" class="contact-link-item">
+            <span class="contact-link-icon">&loz;</span>
+            <span>Email &mdash; hello@eigenlayer-research.org</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ──────────────────────────────────────── -->
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-left">Eigenlayer Research</div>
+        <div class="footer-right">&copy; 2025 &mdash; All rights reserved</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ── Scripts ─────────────────────────────────────── -->
+  <script>
+    /* ── Scrolling Background Text ────────────────────── */
+    (function() {
+      const phrases = [
+        'attention_heads.qkv_projection(x)  # multi-head self-attention forward pass',
+        'residual_stream += mlp(layer_norm(x))  # transformer block residual connection',
+        'sparse_autoencoder.encode(activations, k=256)  # dictionary learning features',
+        'circuit = trace_path(input_token, output_logit)  # computational graph tracing',
+        'def polysemantic_decompose(neuron, basis):  # feature superposition analysis',
+        'cosine_sim(feature_a, feature_b) > 0.92  # activation space geometry match',
+        'W_E @ W_U.T  # embedding-unembedding weight tying matrix product',
+        'induction_head = prev_token_head + copy_head  # two-step induction circuit',
+        'loss = -log P(token | context)  # cross-entropy language model objective',
+        'activation_patching(clean_run, corrupt_run, site="resid_post")  # causal tracing',
+        'svd(W_OV) → rank_1_approx  # low-rank attention pattern factorization',
+        'superposition_capacity = n_features / d_model  # compression ratio theorem',
+        'grad = torch.autograd.grad(logit_diff, cache)  # attribution via backprop',
+        'for layer in range(n_layers): x = block(x)  # sequential transformer pass',
+        'features = sae.W_dec @ activations.T  # sparse feature coefficient extraction',
+        'kl_divergence(ablated_model, full_model)  # circuit completeness metric',
+        'phase_transition(sparsity=0.01, features=4096)  # superposition critical point',
+        'indirect_object_id = compose(S_inhibition, name_mover)  # IOI circuit',
+        'W_Q @ W_K.T / sqrt(d_head)  # scaled dot-product attention scores',
+        'topk_features = heapq.nlargest(k, activations)  # sparse activation selection',
+        'def causal_scrub(model, dataset, hypothesis):  # recursive activation patching',
+        'resid_pre = token_embed + pos_embed  # initial residual stream construction',
+        'feature_freq = (activations > 0).float().mean()  # dead neuron detection rate',
+        'mlp_out = W_out @ gelu(W_in @ x + b_in) + b_out  # MLP sublayer forward',
+        'logit_lens(residual_stream, W_U)  # early decoding through unembedding',
+        'batch = next(data_loader); loss = model(batch)  # training iteration step',
+        'entropy(attention_pattern) → head_type  # attention entropy classification',
+        'jacobian = torch.func.jacrev(model)(input)  # full input-output Jacobian',
+        'probing_accuracy = linear_probe(activations, labels)  # representation quality',
+        'def feature_splitting(sae_small, sae_large):  # multi-resolution analysis',
+      ];
+
+      const container = document.getElementById('hero-scroll-text');
+      // Generate enough lines to fill ~200% of viewport height for seamless looping
+      const lineCount = 80;
+      let html = '';
+      for (let i = 0; i < lineCount; i++) {
+        const phrase = phrases[i % phrases.length];
+        // Offset each line slightly for a staggered look
+        const pad = Math.floor(Math.random() * 40);
+        html += '<div class="text-line" style="padding-left:' + pad + 'ch">' + phrase + '</div>';
+      }
+      // Duplicate for seamless loop
+      html += html;
+      container.innerHTML = html;
+    })();
+
+    /* ── Scroll Reveal ────────────────────────────────── */
+    (function() {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, {
+        threshold: 0.08,
+        rootMargin: '0px 0px -40px 0px'
+      });
+
+      document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    })();
+
+    /* ── Nav background on scroll ─────────────────────── */
+    (function() {
+      const nav = document.querySelector('nav');
+      window.addEventListener('scroll', () => {
+        nav.style.background = window.scrollY > 80
+          ? 'rgba(26, 26, 26, 0.95)'
+          : 'rgba(26, 26, 26, 0.85)';
+      });
+    })();
+
+  </script>
+
+</body>
+</html>
