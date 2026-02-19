@@ -1,7 +1,7 @@
 {
-  "name": "research-lab",
+  "name": "openfolie-labs",
   "version": "1.0.0",
-  "description": "Mechanistic Interpretability Research Lab",
+  "description": "openfolie. — AI Safety & Experimental Systems",
   "scripts": {
     "dev": "npx serve . -p 3000 -s",
     "start": "npx serve . -p 3000 -s"
